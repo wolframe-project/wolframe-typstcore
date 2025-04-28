@@ -1,4 +1,8 @@
+mod utils;
+
+
 pub fn add(left: u64, right: u64) -> u64 {
+    console_log!("Adding {} + {}", left, right);
     left + right
 }
 
