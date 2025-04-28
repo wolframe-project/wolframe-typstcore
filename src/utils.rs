@@ -6,6 +6,8 @@ extern "C" {
     // `log(..)`
     #[wasm_bindgen(js_namespace = console)]
     pub fn log(s: &str);
+
+    pub fn fetch(s: &str) -> Vec<u8>;
 }
 
 #[macro_export]

@@ -9,4 +9,7 @@ authors = ["Markus Hamacher <markus.hamacher16@gmail.com>"]
 crate-type = ["cdylib"]
 
 [dependencies]
+chrono = "0.4.40"
+parking_lot = "0.12.3"
+typst = "0.13.1"
 wasm-bindgen = "0.2.100"
