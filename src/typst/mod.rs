@@ -11,7 +11,7 @@ use typst::{
     diag::FileResult,
     foundations::{Bytes, Datetime},
     layout::PagedDocument,
-    syntax::{FileId, Source},
+    syntax::{FileId, Source, VirtualPath},
     text::{Font, FontBook},
     utils::LazyHash,
     Library, World,
@@ -43,7 +43,7 @@ impl World for TypstCore {
     #[doc = ""]
     #[doc = " Can be created through `Library::build()`."]
     fn library(&self) -> &LazyHash<Library> {
-        todo!()
+        self.library.get_or_init(|| LazyHash::new(Library::builder().build()))
     }
 
     #[doc = " Metadata about all known fonts."]
@@ -53,22 +53,32 @@ impl World for TypstCore {
 
     #[doc = " Get the file id of the main source file."]
     fn main(&self) -> FileId {
-        todo!()
+        FileId::new(None, VirtualPath::new(&self.root))
     }
 
     #[doc = " Try to access the specified source file."]
     fn source(&self, id: FileId) -> FileResult<Source> {
-        todo!()
+        let sources = self.sources.read();
+        if let Some(source) = sources.get(&id) {
+            Ok(source.source())
+        } else {
+            Err(typst::diag::FileError::NotFound(id.vpath().as_rooted_path().to_path_buf()))
+        }
     }
 
     #[doc = " Try to access the specified file."]
     fn file(&self, id: FileId) -> FileResult<Bytes> {
-        todo!()
+        let sources = self.sources.read();
+        if let Some(source) = sources.get(&id) {
+            Ok(source.bytes())
+        } else {
+            Err(typst::diag::FileError::NotFound(id.vpath().as_rooted_path().to_path_buf()))
+        }
     }
 
     #[doc = " Try to access the font with the given index in the font book."]
     fn font(&self, index: usize) -> Option<Font> {
-        todo!()
+        self.fonts.lock().get(index).cloned()
     }
 
     #[doc = " Get the current date."]
