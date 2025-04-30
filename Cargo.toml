@@ -10,6 +10,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 chrono = "0.4.40"
+console_error_panic_hook = "0.1.7"
 parking_lot = "0.12.3"
 typst = "0.13.1"
 wasm-bindgen = "0.2.100"
