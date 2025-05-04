@@ -7,6 +7,7 @@ extern "C" {
     #[wasm_bindgen(js_namespace = console)]
     pub fn log(s: &str);
 
+    #[wasm_bindgen(js_namespace = typst_core_utils)]
     pub fn fetch(s: &str) -> Vec<u8>;
 }
 

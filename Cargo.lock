@@ -2118,25 +2118,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "typst_core"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "console_error_panic_hook",
- "flate2",
- "parking_lot",
- "serde",
- "serde-wasm-bindgen",
- "tar",
- "tsify",
- "typst",
- "typst-assets",
- "typst-svg",
- "wasm-bindgen",
- "wasm-bindgen-test",
-]
-
-[[package]]
 name = "unic-langid"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2610,6 +2591,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6cb8234a863ea0e8cd7284fcdd4f145233eb00fee02bbdd9861aec44e6477bc5"
 dependencies = [
  "memchr",
+]
+
+[[package]]
+name = "wolframe-typst-core"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "console_error_panic_hook",
+ "flate2",
+ "parking_lot",
+ "serde",
+ "serde-wasm-bindgen",
+ "tar",
+ "tsify",
+ "typst",
+ "typst-assets",
+ "typst-svg",
+ "wasm-bindgen",
+ "wasm-bindgen-test",
 ]
 
 [[package]]

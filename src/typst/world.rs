@@ -32,26 +32,12 @@ impl World for TypstCore {
 
     #[doc = " Try to access the specified source file."]
     fn source(&self, id: FileId) -> FileResult<Source> {
-        let sources = self.sources.read();
-        if let Some(source) = sources.get(&id) {
-            Ok(source.source())
-        } else {
-            Err(typst::diag::FileError::NotFound(
-                id.vpath().as_rooted_path().to_path_buf(),
-            ))
-        }
+        Ok(self.retrieve_source(id)?.source())
     }
 
     #[doc = " Try to access the specified file."]
     fn file(&self, id: FileId) -> FileResult<Bytes> {
-        let sources = self.sources.read();
-        if let Some(source) = sources.get(&id) {
-            Ok(source.bytes())
-        } else {
-            Err(typst::diag::FileError::NotFound(
-                id.vpath().as_rooted_path().to_path_buf(),
-            ))
-        }
+        Ok(self.retrieve_source(id)?.bytes())
     }
 
     #[doc = " Try to access the font with the given index in the font book."]

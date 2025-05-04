@@ -18,6 +18,7 @@ mod tests {
 
     use super::*;
     use ::typst::World;
+    use wasm_bindgen_test::__rt::console_log;
     use wasm_bindgen_test::wasm_bindgen_test;
 
     wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
@@ -45,5 +46,26 @@ mod tests {
         console_log!("Error: {:?}", err);
 
         assert_matches!(err, TypstCoreError::DefaultError(_));
+    }
+
+    #[wasm_bindgen_test]
+    fn test_render_0() {
+        let mut core = TypstCore::construct();
+
+        core.add_source(
+            "/main.typ".to_owned(),
+            r#"Hello World
+#let x = 1+2;
+#x
+"#
+            .to_owned(),
+        );
+        let result = core.set_root("/main.typ".to_owned());
+        assert!(result.is_ok(), "Expected no error, but got: {:?}", result);
+
+        let result = core.compile();
+        assert!(result.is_ok(), "Expected no error, but got: {:?}", result);
+
+        console_log!("Result: {:#?}", result.unwrap()[0]);
     }
 }

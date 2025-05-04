@@ -95,7 +95,7 @@ fn fetch_package(package: &PackageSpec) -> FileResult<HashMap<FileId, SourceFile
 }
 
 impl TypstCore {
-    fn retrieve_source(&self, id: FileId) -> FileResult<SourceFile> {
+    pub fn retrieve_source(&self, id: FileId) -> FileResult<SourceFile> {
         match id.package() {
             Some(package) => {
                 if self.packages.lock().contains(&(package.clone().into())) {
