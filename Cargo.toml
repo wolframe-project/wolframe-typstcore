@@ -11,7 +11,16 @@ crate-type = ["cdylib"]
 [dependencies]
 chrono = "0.4.40"
 console_error_panic_hook = "0.1.7"
+flate2 = "1.1.1"
 parking_lot = "0.12.3"
+serde = { version = "1.0.219", features = ["derive"] }
+serde-wasm-bindgen = "0.6.5"
+tar = "0.4.44"
+tsify = { version = "0.5.5", features = ["js"] }
 typst = "0.13.1"
+typst-assets = { version = "0.13.1", features = ["fonts"] }
+typst-svg = "0.13.1"
 wasm-bindgen = "0.2.100"
+
+[dev-dependencies]
 wasm-bindgen-test = "0.3.50"

@@ -1,25 +1,33 @@
 use chrono::{Datelike, Local, Timelike};
-use typst::{diag::FileResult, foundations::{Bytes, Datetime}, syntax::{FileId, Source, VirtualPath}, text::{Font, FontBook}, utils::LazyHash, Library, World};
+use typst::{
+    diag::FileResult,
+    foundations::{Bytes, Datetime},
+    syntax::{FileId, Source},
+    text::{Font, FontBook},
+    utils::LazyHash,
+    Library, World,
+};
 
 use super::TypstCore;
-
 
 impl World for TypstCore {
     #[doc = " The standard library."]
     #[doc = ""]
     #[doc = " Can be created through `Library::build()`."]
     fn library(&self) -> &LazyHash<Library> {
-        self.library.get_or_init(|| LazyHash::new(Library::builder().build()))
+        self.library
+            .get_or_init(|| LazyHash::new(Library::builder().build()))
     }
 
     #[doc = " Metadata about all known fonts."]
     fn book(&self) -> &LazyHash<FontBook> {
-        todo!()
+        self.book
+            .get_or_init(|| LazyHash::new(FontBook::from_fonts(self.fonts.lock().as_slice())))
     }
 
     #[doc = " Get the file id of the main source file."]
     fn main(&self) -> FileId {
-        FileId::new(None, VirtualPath::new(&self.root))
+        *self.root.as_ref().expect("Root path is not set")
     }
 
     #[doc = " Try to access the specified source file."]
@@ -28,7 +36,9 @@ impl World for TypstCore {
         if let Some(source) = sources.get(&id) {
             Ok(source.source())
         } else {
-            Err(typst::diag::FileError::NotFound(id.vpath().as_rooted_path().to_path_buf()))
+            Err(typst::diag::FileError::NotFound(
+                id.vpath().as_rooted_path().to_path_buf(),
+            ))
         }
     }
 
@@ -38,7 +48,9 @@ impl World for TypstCore {
         if let Some(source) = sources.get(&id) {
             Ok(source.bytes())
         } else {
-            Err(typst::diag::FileError::NotFound(id.vpath().as_rooted_path().to_path_buf()))
+            Err(typst::diag::FileError::NotFound(
+                id.vpath().as_rooted_path().to_path_buf(),
+            ))
         }
     }
 
@@ -71,7 +83,7 @@ impl World for TypstCore {
             dt.day() as u8,
             dt.hour() as u8,
             dt.minute() as u8,
-            dt.second() as u8
+            dt.second() as u8,
         )
     }
 }

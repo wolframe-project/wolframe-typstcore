@@ -1,6 +1,5 @@
 use std::{
-    collections::HashMap,
-    path::PathBuf,
+    collections::{HashMap, HashSet},
     sync::{Arc, OnceLock},
 };
 
@@ -14,12 +13,14 @@ use typst::{
     utils::LazyHash,
     Library,
 };
+use wasm::structs::TypstCorePackage;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 mod source_file;
 mod tidy;
+mod typst_core;
+pub mod wasm;
 mod world;
-mod wasm;
 
 #[wasm_bindgen]
 pub struct TypstCore {
@@ -31,9 +32,11 @@ pub struct TypstCore {
 
     fonts: Mutex<Vec<Font>>,
 
-    root: PathBuf,
+    root: Option<FileId>,
 
     now: OnceLock<DateTime<Local>>,
 
     last_doc: Mutex<Option<PagedDocument>>,
+
+    packages: Mutex<HashSet<TypstCorePackage>>,
 }
