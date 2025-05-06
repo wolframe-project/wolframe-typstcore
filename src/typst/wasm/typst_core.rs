@@ -5,11 +5,7 @@ use std::{
 
 use parking_lot::{Mutex, RwLock};
 use typst::{
-    foundations::Bytes,
-    layout::PagedDocument,
-    syntax::{FileId, VirtualPath},
-    text::{Font, FontBook},
-    utils::LazyHash,
+    foundations::Bytes, html::HtmlDocument, layout::PagedDocument, syntax::{FileId, VirtualPath}, text::{Font, FontBook}, utils::LazyHash
 };
 use wasm_bindgen::prelude::wasm_bindgen;
 
@@ -18,7 +14,7 @@ use crate::{
     typst_error,
 };
 
-use super::structs::error::TypstCoreError;
+use super::structs::{error::TypstCoreError, output::{Output, OutputFormat}};
 
 fn gather_internal_fonts() -> Vec<Font> {
     let mut fonts = Vec::new();
@@ -59,24 +55,58 @@ impl TypstCore {
         }
     }
 
-    pub fn compile(&self) -> Result<Vec<String>, TypstCoreError> {
+    pub fn compile(&self, format: OutputFormat) -> Result<Output, TypstCoreError> {
         if self.root.is_none() {
             return Err(typst_error!("Root path is not set"));
         }
 
-        match typst::compile::<PagedDocument>(self).output {
-            Ok(doc) => {
-                *self.last_doc.lock() = Some(doc.clone());
+        match format {
+            OutputFormat::Html => {
+                match typst::compile::<HtmlDocument>(self).output {
+                    Ok(doc) => {
+                        // is not a paged document, so we don't need to store it
+                        let html = typst_html::html(&doc).map_err(|e| {
+                            let mut diagnostics = Vec::new();
+                            for err in e {
+                                let diag = match TypstCoreDiagnostics::from_diagnostics(err, &self.sources.read()) {
+                                    Ok(diag) => diag,
+                                    Err(e) => {
+                                        return e;
+                                    }
+                                };
+                                diagnostics.push(diag);
+                            }
+                            TypstCoreError::CompileError(diagnostics)
+                        })?;
 
-                Ok(doc.pages.iter().map(typst_svg::svg).collect())
-            }
-            Err(error) => {
-                let mut diagnostics = Vec::new();
-                for err in error {
-                    let diag = TypstCoreDiagnostics::from_diagnostics(err, &self.sources.read())?;
-                    diagnostics.push(diag);
+                        Ok(Output::Html(html))
+                    }
+                    Err(error) => {
+                        let mut diagnostics = Vec::new();
+                        for err in error {
+                            let diag = TypstCoreDiagnostics::from_diagnostics(err, &self.sources.read())?;
+                            diagnostics.push(diag);
+                        }
+                        Err(TypstCoreError::CompileError(diagnostics))
+                    }
                 }
-                Err(TypstCoreError::CompileError(diagnostics))
+            }
+            _ => {
+                match typst::compile::<PagedDocument>(self).output {
+                    Ok(doc) => {
+                        *self.last_doc.lock() = Some(doc.clone());
+        
+                        Ok(Output::Svg(doc.pages.iter().map(typst_svg::svg).collect()))
+                    }
+                    Err(error) => {
+                        let mut diagnostics = Vec::new();
+                        for err in error {
+                            let diag = TypstCoreDiagnostics::from_diagnostics(err, &self.sources.read())?;
+                            diagnostics.push(diag);
+                        }
+                        Err(TypstCoreError::CompileError(diagnostics))
+                    }
+                }
             }
         }
     }

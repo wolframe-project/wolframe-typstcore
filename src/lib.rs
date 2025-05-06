@@ -14,6 +14,7 @@ mod tests {
     use std::assert_matches::assert_matches;
 
     use crate::typst::wasm::structs::error::TypstCoreError;
+    use crate::typst::wasm::structs::output::OutputFormat;
     use crate::typst::TypstCore;
 
     use super::*;
@@ -34,7 +35,7 @@ mod tests {
     fn no_root_on_compile() {
         let core = TypstCore::construct();
 
-        let result = core.compile();
+        let result = core.compile(OutputFormat::Svg);
         assert!(
             result.is_err(),
             "Expected an error when root is not set, but got: {:?}",
@@ -63,9 +64,9 @@ mod tests {
         let result = core.set_root("/main.typ".to_owned());
         assert!(result.is_ok(), "Expected no error, but got: {:?}", result);
 
-        let result = core.compile();
+        let result = core.compile(OutputFormat::Svg);
         assert!(result.is_ok(), "Expected no error, but got: {:?}", result);
 
-        console_log!("Result: {:#?}", result.unwrap()[0]);
+        console_log!("Result: {:#?}", result.unwrap().svg().unwrap()[0]);
     }
 }
