@@ -58,15 +58,17 @@ mod tests {
             r#"Hello World
 #let x = 1+2;
 #x
+
+table(columns:2)[*HI*][$phi * frak(X)^(10/5)$]
 "#
             .to_owned(),
         );
         let result = core.set_root("/main.typ".to_owned());
         assert!(result.is_ok(), "Expected no error, but got: {:?}", result);
 
-        let result = core.compile(OutputFormat::Svg);
+        let result = core.compile(OutputFormat::Html);
         assert!(result.is_ok(), "Expected no error, but got: {:?}", result);
 
-        console_log!("Result: {:#?}", result.unwrap().svg().unwrap()[0]);
+        console_log!("Result: {:#?}", result.unwrap().html().unwrap());
     }
 }

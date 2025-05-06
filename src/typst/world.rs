@@ -1,11 +1,6 @@
 use chrono::{Datelike, Local, Timelike};
 use typst::{
-    diag::FileResult,
-    foundations::{Bytes, Datetime},
-    syntax::{FileId, Source},
-    text::{Font, FontBook},
-    utils::LazyHash,
-    Library, World,
+    diag::FileResult, foundations::{Bytes, Datetime}, syntax::{FileId, Source}, text::{Font, FontBook}, utils::LazyHash, Feature, Library, World
 };
 
 use super::TypstCore;
@@ -16,7 +11,7 @@ impl World for TypstCore {
     #[doc = " Can be created through `Library::build()`."]
     fn library(&self) -> &LazyHash<Library> {
         self.library
-            .get_or_init(|| LazyHash::new(Library::builder().build()))
+            .get_or_init(|| LazyHash::new(Library::builder().with_features(vec![Feature::Html].iter().cloned().collect()).build()))
     }
 
     #[doc = " Metadata about all known fonts."]
