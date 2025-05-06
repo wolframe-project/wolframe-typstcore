@@ -2607,6 +2607,7 @@ dependencies = [
  "tsify",
  "typst",
  "typst-assets",
+ "typst-html",
  "typst-svg",
  "wasm-bindgen",
  "wasm-bindgen-test",

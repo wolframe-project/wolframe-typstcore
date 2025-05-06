@@ -14,11 +14,11 @@ use typst::{
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::{
-    typst::{source_file::SourceFile, TypstCore},
+    typst::{source_file::SourceFile, wasm::structs::diagnostics::TypstCoreDiagnostics, TypstCore},
     typst_error,
 };
 
-use super::structs::{TypstCoreDiagnostics, TypstCoreError};
+use super::structs::error::TypstCoreError;
 
 fn gather_internal_fonts() -> Vec<Font> {
     let mut fonts = Vec::new();
@@ -67,6 +67,7 @@ impl TypstCore {
         match typst::compile::<PagedDocument>(self).output {
             Ok(doc) => {
                 *self.last_doc.lock() = Some(doc.clone());
+
                 Ok(doc.pages.iter().map(typst_svg::svg).collect())
             }
             Err(error) => {

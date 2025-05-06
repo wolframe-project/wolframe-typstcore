@@ -13,7 +13,7 @@ mod tests {
 
     use std::assert_matches::assert_matches;
 
-    use crate::typst::wasm::structs::TypstCoreError;
+    use crate::typst::wasm::structs::error::TypstCoreError;
     use crate::typst::TypstCore;
 
     use super::*;

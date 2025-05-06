@@ -19,6 +19,7 @@ tar = "0.4.44"
 tsify = { version = "0.5.5", features = ["js"] }
 typst = "0.13.1"
 typst-assets = { version = "0.13.1", features = ["fonts"] }
+typst-html = "0.13.1"
 typst-svg = "0.13.1"
 wasm-bindgen = "0.2.100"
 

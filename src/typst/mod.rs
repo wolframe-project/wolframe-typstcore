@@ -13,7 +13,7 @@ use typst::{
     utils::LazyHash,
     Library,
 };
-use wasm::structs::TypstCorePackage;
+use wasm::structs::package::TypstCorePackage;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 mod source_file;
