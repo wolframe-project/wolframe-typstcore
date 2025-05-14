@@ -155,4 +155,17 @@ impl TypstCore {
             )))
         }
     }
+
+    pub fn get_source(&self, path: String) -> Result<String, TypstCoreError> {
+        let id = FileId::new(None, VirtualPath::new(&path));
+        let sources = self.sources.read();
+        if let Some(source) = sources.get(&id) {
+            Ok(source.source.text().to_string())
+        } else {
+            Err(typst_error!(format!(
+                "Failed to get source, source not found for path: {:?}",
+                path
+            )))
+        }
+    }
 }
