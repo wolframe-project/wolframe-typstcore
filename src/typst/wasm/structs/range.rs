@@ -37,8 +37,8 @@ impl TypstCoreRange {
                     .as_rooted_path()
                     .to_string_lossy()
                     .to_string(),
-                start: range.start,
-                end: range.end,
+                start: source.byte_to_utf16(range.start).unwrap(),
+                end: source.byte_to_utf16(range.end).unwrap(),
             })
         }
     }

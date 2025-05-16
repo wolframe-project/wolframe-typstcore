@@ -71,4 +71,28 @@ table(columns:2)[*HI*][$phi * frak(X)^(10/5)$]
 
         console_log!("Result: {:#?}", result.unwrap().html().unwrap());
     }
+
+    #[wasm_bindgen_test]
+    fn test_edit_with_untruncated_lines() {
+        let mut core = TypstCore::construct();
+
+        core.add_source(
+            "/main.typ".to_owned(),
+            r#"Hello World"#
+                .to_owned(),
+        );
+        let result = core.set_root("/main.typ".to_owned());
+        assert!(result.is_ok(), "Expected no error, but got: {:?}", result);
+
+        let _ = core.edit_source(
+            "/main.typ".to_owned(), 
+            "Zum einrichten des iBGPs haben wir folgende, wie im Wiki beschriebene Befehle genutzt:\n  ```\n  router bgp 3\n    neighbor 3.[150 + Y].0.1 remote-as 3\n    neighbor 3.[150 + Y].0.1 update-source lo\n  ```\n  Für jeden Router dann dementsprechend sieben Mal, ein Router braucht zu sich selber keine BGP session.\n\n  Für ROME router sieht das dann so aus:\n  ```\nROME_router# conf t\nROME_router(config)# router bgp 3\nROME_router(config-router)# neighbor 3.151.0.1 remote-as 3\nROME_router(config-router)# neighbor 3.152.0.1 remote-as 3\nROME_router(config-router)# neighbor 3.153.0.1 remote-as 3\nROME_router(config-router)# neighbor 3.154.0.1 remote-as 3\nROME_router(config-router)# neighbor 3.155.0.1 remote-as 3\nROME_router(config-router)# neighbor 3.156.0.1 remote-as 3\nROME_router(config-router)# neighbor 3.157.0.1 remote-as 3\nROME_router(config-router)# neighbor 3.151.0.1 update-source lo\nROME_router(config-router)# neighbor 3.152.0.1 update-source lo\nROME_router(config-router)# neighbor 3.153.0.1 update-source lo\nROME_router(config-router)# neighbor 3.154.0.1 update-source lo\nROME_router(config-router)# neighbor 3.155.0.1 update-source lo\nROME_router(config-router)# neighbor 3.156.0.1 update-source lo\nROME_router(config-router)# neighbor 3.157.0.1 update-source lo\n  ```".to_owned(), 
+            0, 11);
+        
+        let result = core.compile(OutputFormat::Html);
+        assert!(result.is_ok(), "Expected no error, but got: {:?}", result);
+        let result = result.unwrap();
+        console_log!("Result: {:#?}", result.html().unwrap());
+        console_log!("Result: {:#?}", core.get_source("/main.typ".to_owned()).unwrap());
+    }
 }

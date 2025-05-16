@@ -10,8 +10,7 @@ use typst::{
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::{
-    typst::{source_file::SourceFile, wasm::structs::diagnostics::TypstCoreDiagnostics, TypstCore},
-    typst_error,
+    console_log, typst::{source_file::SourceFile, wasm::structs::diagnostics::TypstCoreDiagnostics, TypstCore}, typst_error
 };
 
 use super::structs::{error::TypstCoreError, output::{Output, OutputFormat}};
@@ -27,6 +26,20 @@ fn gather_internal_fonts() -> Vec<Font> {
     }
 
     fonts
+}
+
+
+// https://github.com/Myriad-Dreamin/tinymist/blob/main/crates/tinymist-analysis/src/location.rs#L87
+fn monaco_pos_to_typst_offset(
+    source: &SourceFile,
+    line: usize,
+    column: usize,
+) -> Option<usize> {
+    let byte_line_offset = source.source.line_to_byte(line)?;
+    let utf16_line_offset = source.source.byte_to_utf16(byte_line_offset)?;
+    let utf16_offset = utf16_line_offset + column;
+    let byte_offset = source.source.utf16_to_byte(utf16_offset)?;
+    Some(byte_offset)
 }
 
 #[wasm_bindgen]
@@ -141,12 +154,21 @@ impl TypstCore {
         path: String,
         content: String,
         begin: usize,
+        begin_line: usize,
+        begin_column: usize,
         end: usize,
+        end_line: usize,
+        end_column: usize,
     ) -> Result<(), TypstCoreError> {
         let id = FileId::new(None, VirtualPath::new(&path));
         let mut sources = self.sources.write();
         if let Some(source) = sources.get_mut(&id) {
-            source.source.edit(begin..end, &content);
+            let utf16_begin = monaco_pos_to_typst_offset(source, begin_line, begin_column);
+            let utf16_end = monaco_pos_to_typst_offset(source, end_line, end_column);
+
+
+            let range = source.source.edit(utf16_begin.unwrap()..utf16_end.unwrap(), &content);
+            console_log!("Edited range: {:?}; New text: {:?}", range, source.source.text());
             Ok(())
         } else {
             Err(typst_error!(format!(
