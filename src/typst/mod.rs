@@ -1,10 +1,10 @@
 use std::{
     collections::{HashMap, HashSet},
-    sync::{Arc, OnceLock},
+    sync::{Arc, Mutex, OnceLock},
 };
 
+use atomic_refcell::AtomicRefCell;
 use chrono::{DateTime, Local};
-use parking_lot::{Mutex, RwLock};
 use source_file::SourceFile;
 use typst::{
     layout::PagedDocument,
@@ -28,7 +28,7 @@ pub struct TypstCore {
 
     book: OnceLock<LazyHash<FontBook>>,
 
-    sources: Arc<RwLock<HashMap<FileId, SourceFile>>>,
+    sources: Arc<AtomicRefCell<HashMap<FileId, SourceFile>>>,
 
     fonts: Mutex<Vec<Font>>,
 

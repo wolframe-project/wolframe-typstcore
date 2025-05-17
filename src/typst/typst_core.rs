@@ -9,7 +9,7 @@ use typst::{
     syntax::{package::PackageSpec, FileId, VirtualPath},
 };
 
-use crate::utils::fetch;
+use crate::{console_log, utils::fetch};
 
 use super::{source_file::SourceFile, TypstCore};
 
@@ -98,8 +98,9 @@ impl TypstCore {
     pub fn retrieve_source(&self, id: FileId) -> FileResult<SourceFile> {
         match id.package() {
             Some(package) => {
-                if self.packages.lock().contains(&(package.clone().into())) {
-                    let sources = self.sources.read();
+                console_log!("Retrieving source for id: {:?}, {:?}", id, package);
+                if self.packages.lock().unwrap().contains(&(package.clone().into())) {
+                    let sources = self.sources.borrow();
                     if let Some(source) = sources.get(&id) {
                         Ok(source.clone())
                     } else {
@@ -110,12 +111,13 @@ impl TypstCore {
                 } else {
                     let fetched_sources = fetch_package(package)?;
                     {
-                        let mut sources = self.sources.write();
+                        let mut sources = self.sources.borrow_mut();
                         for (id, source) in fetched_sources {
                             sources.insert(id, source.clone());
                         }
+                        self.packages.lock().unwrap().insert(package.clone().into());
                     }
-                    if let Some(source) = self.sources.read().get(&id) {
+                    if let Some(source) = self.sources.borrow().get(&id) {
                         Ok(source.clone())
                     } else {
                         Err(typst::diag::FileError::NotFound(
@@ -125,7 +127,7 @@ impl TypstCore {
                 }
             }
             None => {
-                let sources = self.sources.read();
+                let sources = self.sources.borrow();
                 if let Some(source) = sources.get(&id) {
                     Ok(source.clone())
                 } else {

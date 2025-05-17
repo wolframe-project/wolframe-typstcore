@@ -18,7 +18,7 @@ impl World for TypstCore {
     #[doc = " Metadata about all known fonts."]
     fn book(&self) -> &LazyHash<FontBook> {
         self.book
-            .get_or_init(|| LazyHash::new(FontBook::from_fonts(self.fonts.lock().as_slice())))
+            .get_or_init(|| LazyHash::new(FontBook::from_fonts(self.fonts.lock().unwrap().as_slice())))
     }
 
     #[doc = " Get the file id of the main source file."]
@@ -38,7 +38,7 @@ impl World for TypstCore {
 
     #[doc = " Try to access the font with the given index in the font book."]
     fn font(&self, index: usize) -> Option<Font> {
-        self.fonts.lock().get(index).cloned()
+        self.fonts.lock().unwrap().get(index).cloned()
     }
 
     #[doc = " Get the current date."]

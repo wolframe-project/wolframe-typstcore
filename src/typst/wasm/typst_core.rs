@@ -1,9 +1,9 @@
 use std::{
     collections::{HashMap, HashSet},
-    sync::{Arc, OnceLock},
+    sync::{Arc, Mutex, OnceLock},
 };
 
-use parking_lot::{Mutex, RwLock};
+use atomic_refcell::AtomicRefCell;
 use typst::{
     foundations::Bytes, html::HtmlDocument, layout::PagedDocument, syntax::{FileId, VirtualPath}, text::{Font, FontBook}, utils::LazyHash
 };
@@ -54,7 +54,7 @@ impl TypstCore {
 
             book: OnceLock::from(LazyHash::new(FontBook::from_fonts(&fonts))),
 
-            sources: Arc::new(RwLock::new(HashMap::new())),
+            sources: Arc::new(AtomicRefCell::new(HashMap::new())),
 
             fonts: Mutex::new(fonts),
 
@@ -81,7 +81,7 @@ impl TypstCore {
                         let html = typst_html::html(&doc).map_err(|e| {
                             let mut diagnostics = Vec::new();
                             for err in e {
-                                let diag = match TypstCoreDiagnostics::from_diagnostics(err, &self.sources.read()) {
+                                let diag = match TypstCoreDiagnostics::from_diagnostics(err, &self.sources.borrow()) {
                                     Ok(diag) => diag,
                                     Err(e) => {
                                         return e;
@@ -97,7 +97,7 @@ impl TypstCore {
                     Err(error) => {
                         let mut diagnostics = Vec::new();
                         for err in error {
-                            let diag = TypstCoreDiagnostics::from_diagnostics(err, &self.sources.read())?;
+                            let diag = TypstCoreDiagnostics::from_diagnostics(err, &self.sources.borrow())?;
                             diagnostics.push(diag);
                         }
                         Err(TypstCoreError::CompileError(diagnostics))
@@ -107,14 +107,14 @@ impl TypstCore {
             _ => {
                 match typst::compile::<PagedDocument>(self).output {
                     Ok(doc) => {
-                        *self.last_doc.lock() = Some(doc.clone());
+                        *self.last_doc.lock().unwrap() = Some(doc.clone());
         
                         Ok(Output::Svg(doc.pages.iter().map(typst_svg::svg).collect()))
                     }
                     Err(error) => {
                         let mut diagnostics = Vec::new();
                         for err in error {
-                            let diag = TypstCoreDiagnostics::from_diagnostics(err, &self.sources.read())?;
+                            let diag = TypstCoreDiagnostics::from_diagnostics(err, &self.sources.borrow())?;
                             diagnostics.push(diag);
                         }
                         Err(TypstCoreError::CompileError(diagnostics))
@@ -125,7 +125,7 @@ impl TypstCore {
     }
 
     pub fn set_root(&mut self, path: String) -> Result<(), TypstCoreError> {
-        let sources = self.sources.read();
+        let sources = self.sources.borrow();
         let id = FileId::new(None, VirtualPath::new(&path));
         if sources.contains_key(&id) {
             self.root = Some(id);
@@ -141,12 +141,12 @@ impl TypstCore {
     pub fn add_source(&mut self, path: String, content: String) {
         let id = FileId::new(None, VirtualPath::new(&path));
         let source = SourceFile::new(id, content);
-        self.sources.write().insert(id, source);
+        self.sources.borrow_mut().insert(id, source);
     }
 
     pub fn remove_source(&mut self, path: String) {
         let id = FileId::new(None, VirtualPath::new(&path));
-        self.sources.write().remove(&id);
+        self.sources.borrow_mut().remove(&id);
     }
 
     pub fn edit_source(
@@ -156,7 +156,7 @@ impl TypstCore {
         monaco_range: MonacoRange,
     ) -> Result<(), TypstCoreError> {
         let id = FileId::new(None, VirtualPath::new(&path));
-        let mut sources = self.sources.write();
+        let mut sources = self.sources.borrow_mut();
         if let Some(source) = sources.get_mut(&id) {
             let typst_range = monaco_range.to_typst_range(&source.source);
 
@@ -173,7 +173,7 @@ impl TypstCore {
 
     pub fn get_source(&self, path: String) -> Result<String, TypstCoreError> {
         let id = FileId::new(None, VirtualPath::new(&path));
-        let sources = self.sources.read();
+        let sources = self.sources.borrow();
         if let Some(source) = sources.get(&id) {
             Ok(source.source.text().to_string())
         } else {
@@ -191,11 +191,11 @@ impl TypstCore {
         column: usize,
     ) -> Result<Vec<JsValue>, TypstCoreError> {
         let id = FileId::new(None, VirtualPath::new(&path));
-        let sources = self.sources.read();
+        let sources = self.sources.borrow();
         if let Some(source) = sources.get(&id) {
             let typst_position = MonacoPosition::new(line, column).to_typst_position(&source.source);
             if let Some(typst_position) = typst_position {
-                let doc = self.last_doc.lock();
+                let doc = self.last_doc.lock().unwrap();
                 
                 match typst_ide::autocomplete(self, doc.as_ref(), &source.source, typst_position, true) {
                     Some(completions) => {
