@@ -7,10 +7,10 @@ use parking_lot::{Mutex, RwLock};
 use typst::{
     foundations::Bytes, html::HtmlDocument, layout::PagedDocument, syntax::{FileId, VirtualPath}, text::{Font, FontBook}, utils::LazyHash
 };
-use wasm_bindgen::prelude::wasm_bindgen;
+use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
 use crate::{
-    console_log, typst::{source_file::SourceFile, wasm::structs::diagnostics::TypstCoreDiagnostics, TypstCore}, typst_error
+    console_log, typst::{source_file::SourceFile, wasm::structs::{diagnostics::TypstCoreDiagnostics, range::MonacoRange}, TypstCore}, typst_error
 };
 
 use super::structs::{error::TypstCoreError, output::{Output, OutputFormat}};
@@ -153,21 +153,14 @@ impl TypstCore {
         &mut self,
         path: String,
         content: String,
-        begin: usize,
-        begin_line: usize,
-        begin_column: usize,
-        end: usize,
-        end_line: usize,
-        end_column: usize,
+        monaco_range: MonacoRange,
     ) -> Result<(), TypstCoreError> {
         let id = FileId::new(None, VirtualPath::new(&path));
         let mut sources = self.sources.write();
         if let Some(source) = sources.get_mut(&id) {
-            let utf16_begin = monaco_pos_to_typst_offset(source, begin_line, begin_column);
-            let utf16_end = monaco_pos_to_typst_offset(source, end_line, end_column);
+            let typst_range = monaco_range.to_typst_range(&source.source);
 
-
-            let range = source.source.edit(utf16_begin.unwrap()..utf16_end.unwrap(), &content);
+            let range = source.source.edit(typst_range, &content);
             console_log!("Edited range: {:?}; New text: {:?}", range, source.source.text());
             Ok(())
         } else {
