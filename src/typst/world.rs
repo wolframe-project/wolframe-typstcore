@@ -2,6 +2,7 @@ use chrono::{Datelike, Local, Timelike};
 use typst::{
     diag::FileResult, foundations::{Bytes, Datetime}, syntax::{FileId, Source}, text::{Font, FontBook}, utils::LazyHash, Feature, Library, World
 };
+use typst_ide::IdeWorld;
 
 use super::TypstCore;
 
@@ -66,5 +67,12 @@ impl World for TypstCore {
             dt.minute() as u8,
             dt.second() as u8,
         )
+    }
+}
+
+
+impl IdeWorld for TypstCore {
+    fn upcast(&self) -> &dyn World {
+        self
     }
 }

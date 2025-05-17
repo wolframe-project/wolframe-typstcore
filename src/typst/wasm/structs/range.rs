@@ -123,27 +123,45 @@ impl MonacoRange {
     }
 
     pub fn to_typst_range(&self, source: &Source) -> Range<usize> {
-        // https://github.com/Myriad-Dreamin/tinymist/blob/main/crates/tinymist-analysis/src/location.rs#L87
-        fn monaco_pos_to_typst_offset(
-            source: &Source,
-            line: usize,
-            column: usize,
-        ) -> Option<usize> {
-            let byte_line_offset = source.line_to_byte(line)?;
-            let utf16_line_offset = source.byte_to_utf16(byte_line_offset)?;
-            let utf16_offset = utf16_line_offset + column;
-            let byte_offset = source.utf16_to_byte(utf16_offset)?;
-            Some(byte_offset)
-        }
-
         console_log!("Range: {} {} {} {}", self.begin_line_number, self.begin_column, self.end_line_number, self.end_column);
 
-        let begin = monaco_pos_to_typst_offset(source, self.begin_line_number.saturating_sub(1), self.begin_column.saturating_sub(1));
-        let end = monaco_pos_to_typst_offset(source, self.end_line_number.saturating_sub(1), self.end_column.saturating_sub(1));
+        let begin = MonacoPosition::new(self.begin_line_number, self.begin_column).to_typst_position(source);
+        let end = MonacoPosition::new(self.end_line_number, self.end_column).to_typst_position(source);
         if let (Some(begin), Some(end)) = (begin, end) {
             begin..end
         } else {
             0..0
         }
     } 
+}
+
+#[wasm_bindgen]
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
+pub struct MonacoPosition {
+    pub line_number: usize,
+    pub column: usize,
+}
+
+#[wasm_bindgen]
+impl MonacoPosition {
+    #[wasm_bindgen(constructor)]
+    pub fn new(line_number: usize, column: usize) -> Self {
+        MonacoPosition {
+            line_number,
+            column,
+        }
+    }
+}
+
+impl MonacoPosition {
+    // https://github.com/Myriad-Dreamin/tinymist/blob/main/crates/tinymist-analysis/src/location.rs#L87
+    pub fn to_typst_position(&self, source: &Source) -> Option<usize> {
+        let line = self.line_number.saturating_sub(1);
+        let column = self.column.saturating_sub(1);
+        let byte_line_offset = source.line_to_byte(line)?;
+        let utf16_line_offset = source.byte_to_utf16(byte_line_offset)?;
+        let utf16_offset = utf16_line_offset + column;
+        let byte_offset = source.utf16_to_byte(utf16_offset)?;
+        Some(byte_offset)
+    }
 }

@@ -10,7 +10,7 @@ use typst::{
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
 use crate::{
-    console_log, typst::{source_file::SourceFile, wasm::structs::{diagnostics::TypstCoreDiagnostics, range::MonacoRange}, TypstCore}, typst_error
+    console_log, typst::{source_file::SourceFile, wasm::structs::{diagnostics::TypstCoreDiagnostics, range::{MonacoPosition, MonacoRange}}, TypstCore}, typst_error
 };
 
 use super::structs::{error::TypstCoreError, output::{Output, OutputFormat}};
@@ -176,6 +176,45 @@ impl TypstCore {
         let sources = self.sources.read();
         if let Some(source) = sources.get(&id) {
             Ok(source.source.text().to_string())
+        } else {
+            Err(typst_error!(format!(
+                "Failed to get source, source not found for path: {:?}",
+                path
+            )))
+        }
+    }
+
+    pub fn auto_complete(
+        &self,
+        path: String,
+        line: usize,
+        column: usize,
+    ) -> Result<Vec<JsValue>, TypstCoreError> {
+        let id = FileId::new(None, VirtualPath::new(&path));
+        let sources = self.sources.read();
+        if let Some(source) = sources.get(&id) {
+            let typst_position = MonacoPosition::new(line, column).to_typst_position(&source.source);
+            if let Some(typst_position) = typst_position {
+                let doc = self.last_doc.lock();
+                
+                match typst_ide::autocomplete(self, doc.as_ref(), &source.source, typst_position, true) {
+                    Some(completions) => {
+                        let mut result = Vec::new();
+                        for completion in completions.1 {
+                            if let Ok(completion) = serde_wasm_bindgen::to_value(&completion) {
+                                result.push(completion);
+                            }
+                        }
+                        Ok(result)
+                    }
+                    None => Ok(Vec::new()),
+                }
+            } else {
+                Err(typst_error!(format!(
+                    "Failed to convert Monaco position to Typst position for path: {:?}",
+                    path
+                )))
+            }
         } else {
             Err(typst_error!(format!(
                 "Failed to get source, source not found for path: {:?}",
