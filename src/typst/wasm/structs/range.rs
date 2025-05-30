@@ -2,7 +2,7 @@ use std::{collections::HashMap, ops::Range};
 
 use serde::{Deserialize, Serialize};
 use typst::syntax::{FileId, Source, Span};
-use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
+use wasm_bindgen::{prelude::wasm_bindgen};
 
 use crate::{console_log, typst::source_file::SourceFile, typst_error};
 

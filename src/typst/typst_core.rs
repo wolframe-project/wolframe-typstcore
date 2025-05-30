@@ -6,8 +6,9 @@ use std::{
 use flate2::read::GzDecoder;
 use typst::{
     diag::{FileError, FileResult},
-    syntax::{package::PackageSpec, FileId, VirtualPath},
+    syntax::{package::PackageSpec, FileId, LinkedNode, Span, VirtualPath},
 };
+use wasm_bindgen::closure;
 
 use crate::{console_log, utils::fetch};
 
@@ -137,5 +138,38 @@ impl TypstCore {
                 }
             }
         }
+    }
+
+    pub fn resolve_span<F, R>(
+        &self,
+        span: Span,
+        closure: F,
+    ) -> Result<Option<R>, FileError>
+    where
+        F: FnOnce(LinkedNode<'_>, FileId, SourceFile) -> R,
+    {
+        if span.is_detached() {
+            return Ok(None);
+        }
+        let id = span.id().unwrap();
+        let source_file = self.retrieve_source(id)?;
+        let source = source_file.source();
+        let node = source.find(span);
+        if let Some(node) = node {
+            Ok(Some(closure(node, id, source_file)))
+        } else {
+            Err(FileError::NotFound(
+                id.vpath().as_rooted_path().to_path_buf(),
+            ))
+        }
+    }
+
+    pub fn get_source_file(&self, path: String) -> FileResult<SourceFile> {
+        let id = FileId::new(None, VirtualPath::new(&path));
+        self.retrieve_source(id).map_err(|e| {
+            typst::diag::FileError::NotFound(
+                id.vpath().as_rooted_path().to_path_buf(),
+            )
+        })
     }
 }

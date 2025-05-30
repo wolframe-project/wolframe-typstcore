@@ -10,7 +10,7 @@ use typst::{
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
 use crate::{
-    console_log, typst::{source_file::SourceFile, wasm::structs::{diagnostics::TypstCoreDiagnostics, range::{MonacoPosition, MonacoRange}}, TypstCore}, typst_error
+    console_log, typst::{source_file::SourceFile, wasm::structs::{definition::TypstCoreDefinition, diagnostics::TypstCoreDiagnostics, range::{MonacoPosition, MonacoRange}}, TypstCore}, typst_error
 };
 
 use super::structs::{error::TypstCoreError, output::{Output, OutputFormat}};
@@ -26,20 +26,6 @@ fn gather_internal_fonts() -> Vec<Font> {
     }
 
     fonts
-}
-
-
-// https://github.com/Myriad-Dreamin/tinymist/blob/main/crates/tinymist-analysis/src/location.rs#L87
-fn monaco_pos_to_typst_offset(
-    source: &SourceFile,
-    line: usize,
-    column: usize,
-) -> Option<usize> {
-    let byte_line_offset = source.source.line_to_byte(line)?;
-    let utf16_line_offset = source.source.byte_to_utf16(byte_line_offset)?;
-    let utf16_offset = utf16_line_offset + column;
-    let byte_offset = source.source.utf16_to_byte(utf16_offset)?;
-    Some(byte_offset)
 }
 
 #[wasm_bindgen]
@@ -215,6 +201,30 @@ impl TypstCore {
                     path
                 )))
             }
+        } else {
+            Err(typst_error!(format!(
+                "Failed to get source, source not found for path: {:?}",
+                path
+            )))
+        }
+    }
+
+    pub fn definition(
+        &self,
+        path: String,
+        range: MonacoRange,
+    ) -> Result<TypstCoreDefinition, TypstCoreError> {
+        let id = FileId::new(None, VirtualPath::new(&path));
+        let sources = self.sources.borrow();
+        if let Some(source) = sources.get(&id) {
+            let typst_range = range.to_typst_range(&source.source);
+            
+            let doc = self.last_doc.lock().unwrap().clone();
+
+            let typst_def = typst_ide::definition(self, doc.as_ref(), &source.source(), typst_range.start, typst::syntax::Side::After);
+            let typst_tt = typst_ide::tooltip(self, doc.as_ref(), &source.source(), typst_range.start, typst::syntax::Side::After);
+
+            TypstCoreDefinition::new(self, typst_def, typst_tt, source)
         } else {
             Err(typst_error!(format!(
                 "Failed to get source, source not found for path: {:?}",
